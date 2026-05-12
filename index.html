@@ -1,56 +1,166 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام حصر المواقع الجغرافية الآمن</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        :root { --primary: #2c3e50; --secondary: #2980b9; --bg: #f4f7f9; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: var(--bg); margin: 0; padding: 0; color: #333; }
-        .header { background: white; padding: 20px; border-bottom: 4px solid var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 450px; margin: 20px auto; }
-        label { display: block; text-align: right; margin: 15px 0 5px; font-weight: bold; font-size: 14px; }
-        select, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; font-family: inherit; }
-        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #2171a3; }
-        #qr-result { margin-top: 20px; display: none; flex-direction: column; align-items: center; border-top: 2px dashed #eee; padding-top: 20px; }
-        #qrcode { padding: 10px; background: white; border: 1px solid #ddd; }
-        .alert { font-size: 13px; color: #d35400; background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 20px; border-right: 5px solid #e67e22; text-align: right; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>نظام تسجيل الموقع الجغرافي</title>
+
+<!-- مكتبة QR الحديثة -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+    :root{
+        --primary:#2c3e50;
+        --secondary:#2980b9;
+        --bg:#f4f7f9;
+    }
+
+    body{
+        font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+        text-align:center;
+        background-color:var(--bg);
+        margin:0;
+        padding:0;
+        color:#333;
+    }
+
+    .header{
+        background:white;
+        padding:20px;
+        border-bottom:4px solid var(--secondary);
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .container{
+        background:white;
+        padding:25px;
+        border-radius:12px;
+        box-shadow:0 4px 15px rgba(0,0,0,0.1);
+        max-width:480px;
+        margin:20px auto;
+    }
+
+    label{
+        display:block;
+        text-align:right;
+        margin:15px 0 5px;
+        font-weight:bold;
+        font-size:14px;
+    }
+
+    select,
+    button{
+        width:100%;
+        padding:12px;
+        margin-bottom:15px;
+        border-radius:8px;
+        border:1px solid #ccc;
+        font-size:16px;
+        font-family:inherit;
+    }
+
+    button{
+        background:var(--secondary);
+        color:white;
+        border:none;
+        cursor:pointer;
+        font-weight:bold;
+        transition:0.3s;
+    }
+
+    button:disabled{
+        background:#95a5a6;
+        cursor:not-allowed;
+    }
+
+    #qr-result{
+        margin-top:20px;
+        display:none;
+        flex-direction:column;
+        align-items:center;
+        border-top:2px dashed #eee;
+        padding-top:20px;
+    }
+
+    #qrcode{
+        padding:10px;
+        background:white;
+        border:1px solid #ddd;
+        border-radius:10px;
+    }
+
+    .status-msg{
+        font-size:13px;
+        color:#d35400;
+        background:#fff3e0;
+        padding:10px;
+        border-radius:8px;
+        margin-bottom:10px;
+        display:none;
+        border-right:5px solid #e67e22;
+        text-align:right;
+    }
+    .footer{
+    margin-top:30px;
+    padding:15px;
+    text-align:center;
+    color:#7f8c8d;
+    font-size:14px;
+    font-weight:bold;
+}
+</style>
 </head>
+
 <body>
 
 <div class="header">
     <h2 style="margin:0;">تسجيل الموقع الجغرافي للمراكز</h2>
-    <p style="margin:5px 0 0; color: #7f8c8d;">الادارة العامة للخدمات الطبية - خدمة العملاء </p>
+    <p style="margin:5px 0 0;color:#7f8c8d;">
+        الادارة العامة للخدمات الطبية - خدمة العملاء
+    </p>
 </div>
 
 <div class="container">
-    <div class="alert">
-        هذا النموذج "أوفلاين" تماماً. اختر البيانات، اضغط توليد، ثم أرسل <b>صورة الشاشة</b> للإدارة.
-    </div>
+
+    <div id="infoBox" class="status-msg"></div>
 
     <label>1. اختر الفرع:</label>
+
     <select id="branchSelect" onchange="updateCenters()">
         <option value="">-- اختر الفرع --</option>
     </select>
 
     <label>2. اختر المركز:</label>
+
     <select id="centerSelect" disabled>
-        <option value="">-- اختر المركز --</option>
+        <option value="">-- اختر الفرع أولاً --</option>
     </select>
 
-    <button id="genBtn" onclick="generateQR()">توليد كود الموقع (GPS)</button>
+    <button id="genBtn" onclick="generateQR()">
+        توليد كود الموقع (GPS)
+    </button>
 
     <div id="qr-result">
-        <p style="color: #27ae60; font-weight: bold;">✅ تم تحديد الإحداثيات</p>
+        <p style="color:#27ae60;font-weight:bold;">
+            ✅ تم تحديد الإحداثيات بنجاح
+        </p>
+
         <div id="qrcode"></div>
-        <p style="font-weight: bold; color: #c0392b; margin-top:15px;">يرجى تصوير الشاشة (Screenshot) الآن</p>
+
+        <p style="font-weight:bold;color:#c0392b;margin-top:15px;">
+            يرجى تصوير الشاشة الآن
+        </p>
     </div>
+
 </div>
 
 <script>
+
+/* ===========================
+   البيانات
+=========================== */
+
 const branchData = {
     "رئاسة الهيئة": [
         "الادارة العامة للخدمات الطبية",
@@ -411,46 +521,183 @@ const branchData = {
     ]
 };
 
-const bSelect = document.getElementById('branchSelect');
-const cSelect = document.getElementById('centerSelect');
+/* ===========================
+   العناصر
+=========================== */
 
-Object.keys(branchData).sort().forEach(b => {
-    let opt = document.createElement('option');
-    opt.value = b; opt.text = b;
-    bSelect.add(opt);
+const bSelect = document.getElementById("branchSelect");
+const cSelect = document.getElementById("centerSelect");
+const btn = document.getElementById("genBtn");
+const qrDiv = document.getElementById("qrcode");
+const qrResult = document.getElementById("qr-result");
+
+/* ===========================
+   تعبئة الفروع
+=========================== */
+
+Object.keys(branchData).sort().forEach(branch => {
+
+    let option = document.createElement("option");
+
+    option.value = branch;
+    option.textContent = branch;
+
+    bSelect.appendChild(option);
 });
 
-function updateCenters() {
-    cSelect.innerHTML = '<option value="">-- اختر المركز --</option>';
+/* ===========================
+   تحديث المراكز
+=========================== */
+
+function updateCenters(){
+
+    cSelect.innerHTML =
+        '<option value="">-- اختر المركز --</option>';
+
     const centers = branchData[bSelect.value];
-    if (centers) {
+
+    if(centers){
+
         cSelect.disabled = false;
-        centers.sort().forEach(c => {
-            let opt = document.createElement('option');
-            opt.value = c; opt.text = c;
-            cSelect.add(opt);
+
+        centers.forEach(center => {
+
+            let option = document.createElement("option");
+
+            option.value = center;
+            option.textContent = center;
+
+            cSelect.appendChild(option);
         });
+
     } else {
+
         cSelect.disabled = true;
     }
 }
 
-function generateQR() {
-    if (!bSelect.value || !cSelect.value) { alert("يرجى اختيار الفرع والمركز"); return; }
-    document.getElementById('genBtn').innerText = "جاري تحديد الموقع...";
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-            const rawData = `B:${bSelect.value}|C:${cSelect.value}|L:${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}|T:${new Date().getTime()}`;
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), { text: rawData, width: 200, height: 200 });
-            document.getElementById('qr-result').style.display = 'flex';
-            document.getElementById('genBtn').innerText = "إعادة توليد الكود";
-        }, err => {
-            alert("يرجى تفعيل الـ GPS في الموبايل.");
-            document.getElementById('genBtn').innerText = "حاول مرة أخرى";
-        });
+/* ===========================
+   إنشاء QR
+=========================== */
+
+function generateQR(){
+
+    if(!bSelect.value || !cSelect.value){
+
+        alert("يرجى اختيار الفرع والمركز");
+
+        return;
     }
+
+    if(!navigator.geolocation){
+
+        alert("المتصفح لا يدعم GPS");
+
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "جاري تحديد الموقع...";
+
+    navigator.geolocation.getCurrentPosition(
+
+        /* نجاح */
+        function(position){
+
+            const latitude =
+                position.coords.latitude.toFixed(5);
+
+            const longitude =
+                position.coords.longitude.toFixed(5);
+
+            /* البيانات */
+            const qrData = JSON.stringify({
+
+                branch: bSelect.value,
+                center: cSelect.value,
+                lat: latitude,
+                lng: longitude,
+                time: Date.now()
+            });
+
+            qrDiv.innerHTML = "";
+
+            /* إنشاء QR */
+            QRCode.toCanvas(
+
+                qrData,
+
+                {
+                    width:220,
+                    margin:2,
+                    errorCorrectionLevel:'M'
+                },
+
+                function(error, canvas){
+
+                    if(error){
+
+                        console.error(error);
+
+                        alert("فشل إنشاء QR Code");
+
+                        btn.disabled = false;
+                        btn.innerText = "إعادة المحاولة";
+
+                        return;
+                    }
+
+                    qrDiv.appendChild(canvas);
+
+                    qrResult.style.display = "flex";
+
+                    btn.disabled = false;
+                    btn.innerText = "تحديث الموقع";
+                }
+            );
+        },
+
+        /* فشل */
+        function(error){
+
+            let msg = "";
+
+            switch(error.code){
+
+                case 1:
+                    msg = "تم رفض إذن الموقع";
+                    break;
+
+                case 2:
+                    msg = "تعذر الوصول للموقع";
+                    break;
+
+                case 3:
+                    msg = "انتهى وقت انتظار GPS";
+                    break;
+
+                default:
+                    msg = "حدث خطأ غير معروف";
+            }
+
+            alert(msg);
+
+            btn.disabled = false;
+            btn.innerText = "إعادة المحاولة";
+        },
+
+        /* إعدادات GPS */
+        {
+            enableHighAccuracy:true,
+            timeout:15000,
+            maximumAge:0
+        }
+    );
 }
+
 </script>
+<footer class="footer">
+    By Dr. Mai Hussein
+</footer>
 </body>
 </html>
