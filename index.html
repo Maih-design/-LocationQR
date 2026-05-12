@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل مواقع مراكز الخدمة - آمن داخلياً</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #2980b9; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: var(--bg); margin: 0; padding: 0; color: #333; }
+        .header { background: white; padding: 20px; border-bottom: 4px solid var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 450px; margin: 20px auto; }
+        label { display: block; text-align: right; margin: 15px 0 5px; font-weight: bold; font-size: 14px; }
+        select, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; font-family: inherit; }
+        button { background: var(--secondary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #2171a3; }
+        button:disabled { background: #bdc3c7; }
+        #qr-result { margin-top: 20px; display: none; flex-direction: column; align-items: center; border-top: 2px dashed #eee; padding-top: 20px; }
+        #qrcode { padding: 10px; background: white; border: 1px solid #ddd; }
+        .footer { font-size: 12px; color: #95a5a6; margin: 30px 0; }
+        .alert { font-size: 13px; color: #d35400; background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 20px; border-right: 5px solid #e67e22; text-align: right; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 style="margin:0;">تسجيل الموقع الجغرافي للمراكز</h2>
+    <p style="margin:5px 0 0; color: #7f8c8d;">الادارة العامة للخدمات الطبية  -  خدمة العملاء - نظام الحصر الآمن</p>
+</div>
+
+<div class="container">
+    <div class="alert">
+        هذا النموذج لا يرسل بيانات عبر الإنترنت. بعد الضغط على "توليد"، يرجى تصوير الشاشة (Screenshot) وإرسالها للإدارة.
+    </div>
+
+    <label>1. اختر الفرع التابع له:</label>
+    <select id="branchSelect" onchange="updateCenters()">
+        <option value="">-- اختر الفرع --</option>
+    </select>
+
+    <label>2. اختر اسم مركز خدمة العملاء:</label>
+    <select id="centerSelect" disabled>
+        <option value="">-- اختر المركز --</option>
+    </select>
+
+    <button id="genBtn" onclick="generateQR()">توليد كود الموقع الجغرافي (GPS)</button>
+
+    <div id="qr-result">
+        <p style="color: #27ae60; font-weight: bold;">✅ تم تحديد الموقع بنجاح</p>
+        <div id="qrcode"></div>
+        <p style="font-size: 11px; color: #7f8c8d; margin-top: 10px;">كود المصادقة: <span id="token"></span></p>
+        <p style="font-weight: bold; color: #c0392b;">يرجى تصوير هذه الشاشة الآن</p>
+    </div>
+</div>
+
+<div class="footer">By Dr. Mai Hussein</div>
+
+<script>
+// البيانات الكاملة من ملف الإكسيل
+const branchData = {
+    "رئاسة الهيئة": ["الادارة العامة للخدمات الطبية", "مركز خدمه عملاء رئاسة الهيئة بمدينة نصر", "مكتب الشئون الطبيه", "مكتب رئيس الهيئة"],
+    "فرع اسيوط": ["أبو العباس للطلاب بصدفا", "ساحل سليم الشاملة", "ابوتيج", "الغنايم الشاملة", "المجمع الطبى بأسيوط الجديدة", "المجمع الطبى ببنى مر", "خدمة العملاء العيادة المركزيه", "ديروط", "سيدى أبو العيون", "عيادة الطلائع", "عيادة أبنوب الشاملة", "عيادة الأمل طلاب المدارس", "عيادة البدارى الشاملة", "عيادة الجامعة", "عيادة السلام", "عيادة الشرطة", "عيادة القوصية طلاب", "عيادة القوصيه الشاملة", "عيادة ساحل سليم الشاملة لطلاب المدارس", "عيادة سيدى جلال للطلاب", "عيادة صدفا الشاملة", "عيادة مجمع المصالح", "مجمع طبى سيدى الفرغلى (طلاب مدارس)"],
+    "فرع شمال سيناء": ["عيادة الشيخ زويد", "مركز خدمه عملاء فرع شمال سيناء"],
+    "فرع شمال غرب الدلتا": ["خدمة عملاء مستشفى جمال عبد الناصر", "عيادة سوتر (جامعه اسكندرية)", "مركز خدمة عملاء ابو قير", "مركز خدمة عملاء فرع شمال غرب - النقراشى", "مركز خدمة عملاء مستشفى الشرطة", "مركز خدمة عملاء مستشفى الطلبه سبورتينج", "مركز خدمة عملاء مستشفى كرموز", "مركز خدمه عملاء فرع شمال غرب الدلتا"],
+    "فرع قنا": ["دشنا", "عيادة أبو تشت", "عيادة الوفاء الشاملة", "عيادة الوقف الشاملة", "عيادة سيدى عبد الرحيم الشاملة", "عيادة فرشوط", "عيادة قفط الشاملة", "عيادة قوص الشاملة", "عيادة نقاده", "مركز خدمة عملاء مستشفى قنا العام", "مركز خدمة عملاء مستشفى قوص المركزى", "مركز خدمه عملاء فرع قنا", "نجع حمادى"],
+    "فرع كفر الشيخ": ["الحامول", "المنطقة الثانيه بدسوق", "بلطيم"]
+};
+
+// تعبئة الفروع
+const bSelect = document.getElementById('branchSelect');
+const cSelect = document.getElementById('centerSelect');
+
+Object.keys(branchData).sort().forEach(b => {
+    let opt = document.createElement('option');
+    opt.value = b; opt.text = b;
+    bSelect.add(opt);
+});
+
+function updateCenters() {
+    cSelect.innerHTML = '<option value="">-- اختر المركز --</option>';
+    const centers = branchData[bSelect.value];
+    if (centers) {
+        cSelect.disabled = false;
+        centers.sort().forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = c; opt.text = c;
+            cSelect.add(opt);
+        });
+    } else {
+        cSelect.disabled = true;
+    }
+}
+
+function generateQR() {
+    if (!bSelect.value || !cSelect.value) { alert("يرجى إكمال الاختيارات"); return; }
+    
+    document.getElementById('genBtn').disabled = true;
+    document.getElementById('genBtn').innerText = "جاري تحديد الموقع...";
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lon = pos.coords.longitude.toFixed(6);
+            const rawData = `B:${bSelect.value}|C:${cSelect.value}|L:${lat},${lon}|D:${new Date().getTime()}`;
+            
+            // مسح الـ QR القديم
+            document.getElementById('qrcode').innerHTML = "";
+            
+            // توليد الـ QR
+            new QRCode(document.getElementById("qrcode"), {
+                text: rawData,
+                width: 180,
+                height: 180
+            });
+
+            document.getElementById('token').innerText = btoa(unescape(encodeURIComponent(rawData))).substring(0,12);
+            document.getElementById('qr-result').style.display = 'flex';
+            document.getElementById('genBtn').disabled = false;
+            document.getElementById('genBtn').innerText = "تعديل البيانات / إعادة التوليد";
+        }, err => {
+            alert("فشل تحديد الموقع. تأكد من تشغيل الـ GPS ومنح المتصفح الإذن.");
+            document.getElementById('genBtn').disabled = false;
+            document.getElementById('genBtn').innerText = "حاول مرة أخرى";
+        }, { enableHighAccuracy: true });
+    }
+}
+</script>
+
+</body>
+</html>
